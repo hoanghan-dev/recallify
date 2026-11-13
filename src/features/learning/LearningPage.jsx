@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -73,13 +73,39 @@ export const LearningPage = () => {
   const currentQ = queue[currentIndex];
   const isMultiple = Array.isArray(currentQ?.correctAnswer) || currentQ?.type === 'multiple';
 
-  // Handle enter key to continue
+  const autoNextTimeoutRef = useRef(null);
+
+  // Auto-next question after 1s when answer is correct; manual continue when incorrect
+  useEffect(() => {
+    if (isEvaluated && feedback?.isCorrect && !isRoundComplete) {
+      autoNextTimeoutRef.current = setTimeout(() => {
+        continueToNext();
+      }, 200);
+    }
+
+    return () => {
+      if (autoNextTimeoutRef.current) {
+        clearTimeout(autoNextTimeoutRef.current);
+        autoNextTimeoutRef.current = null;
+      }
+    };
+  }, [isEvaluated, feedback?.isCorrect, currentIndex, isRoundComplete, continueToNext]);
+
+  const handleManualContinue = useCallback(() => {
+    if (autoNextTimeoutRef.current) {
+      clearTimeout(autoNextTimeoutRef.current);
+      autoNextTimeoutRef.current = null;
+    }
+    continueToNext();
+  }, [continueToNext]);
+
+  // Handle enter key to continue or check answer
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Enter') {
         if (isEvaluated && !isRoundComplete) {
           e.preventDefault();
-          continueToNext();
+          handleManualContinue();
         } else if (!isEvaluated && isMultiple && userSelection && userSelection.length > 0) {
           e.preventDefault();
           evaluateCurrentAnswer();
@@ -88,7 +114,7 @@ export const LearningPage = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isEvaluated, isRoundComplete, isMultiple, userSelection, continueToNext, evaluateCurrentAnswer]);
+  }, [isEvaluated, isRoundComplete, isMultiple, userSelection, handleManualContinue, evaluateCurrentAnswer]);
 
   if (!currentQ && !isRoundComplete) {
     return (
@@ -103,8 +129,8 @@ export const LearningPage = () => {
   const roundAccuracy =
     roundCorrect.length + roundIncorrect.length > 0
       ? Math.round(
-          (roundCorrect.length / (roundCorrect.length + roundIncorrect.length)) * 100
-        )
+        (roundCorrect.length / (roundCorrect.length + roundIncorrect.length)) * 100
+      )
       : 100;
 
   return (
@@ -268,22 +294,31 @@ export const LearningPage = () => {
                 )}
 
                 <div className="space-y-1.5 flex-1">
-                  <div className="font-bold text-sm">
-                    {feedback.isCorrect
-                      ? 'Correct! Mastered concept.'
-                      : 'Needs Review! This question will repeat in the next round.'}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-bold text-sm">
+                      {feedback.isCorrect
+                        ? 'Chính xác! Đã nắm vững câu hỏi này.'
+                        : 'Chưa chính xác! Câu này sẽ lặp lại ở vòng sau.'}
+                    </span>
+
+                    {feedback.isCorrect && (
+                      <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded-full inline-flex items-center gap-1.5 animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                        <span>Tự động chuyển câu sau 1s</span>
+                      </span>
+                    )}
                   </div>
 
                   {!feedback.isCorrect && (
-                    <div className="text-xs font-semibold text-emerald-900">
-                      Correct Answer:{' '}
+                    <div className="text-xs font-semibold text-emerald-900 pt-1">
+                      Đáp án đúng:{' '}
                       <span className="font-extrabold">{feedback.correctAnswers.join(', ')}</span>
                     </div>
                   )}
 
                   {feedback.explanation && (
                     <div className="text-xs leading-relaxed text-slate-700 bg-white/70 p-3 rounded-xl border border-slate-200/60 mt-2">
-                      <span className="font-semibold block mb-0.5 text-slate-900">Explanation:</span>
+                      <span className="font-semibold block mb-0.5 text-slate-900">Giải thích:</span>
                       {feedback.explanation}
                     </div>
                   )}
@@ -293,17 +328,24 @@ export const LearningPage = () => {
               {/* Continue Button */}
               <div className="flex items-center justify-between pt-2">
                 <span className="text-xs text-slate-400 hidden sm:inline">
-                  Press <kbd className="font-mono bg-slate-100 px-1.5 py-0.5 rounded border text-slate-600">Enter</kbd> to continue
+                  {feedback.isCorrect
+                    ? 'Đang tự động chuyển tiếp hoặc bấm '
+                    : 'Xem lại giải thích rồi bấm '}
+                  <kbd className="font-mono bg-slate-100 px-1.5 py-0.5 rounded border text-slate-600">Enter</kbd>
                 </span>
                 <Button
-                  variant="primary"
+                  variant={feedback.isCorrect ? 'outline' : 'primary'}
                   size="md"
                   icon={ArrowRight}
                   iconPosition="right"
-                  onClick={continueToNext}
-                  className="w-full sm:w-auto ml-auto px-6"
+                  onClick={handleManualContinue}
+                  className="w-full sm:w-auto ml-auto px-6 font-semibold"
                 >
-                  {currentIndex === queue.length - 1 ? 'View Round Summary' : 'Continue'}
+                  {currentIndex === queue.length - 1
+                    ? 'Xem tổng kết vòng'
+                    : feedback.isCorrect
+                      ? 'Tiếp tục ngay →'
+                      : 'Tiếp tục sang câu sau'}
                 </Button>
               </div>
             </div>
