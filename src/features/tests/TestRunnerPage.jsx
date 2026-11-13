@@ -41,10 +41,13 @@ export const TestRunnerPage = () => {
 
   const [showSubmitModal, setShowSubmitModal] = useState(false);
 
-  // Guard: if no active test or invalid state, redirect
+  // Guard & Restore: if no active test or invalid state, try restoring from localStorage
   useEffect(() => {
     if (!questions || questions.length === 0 || status === 'idle') {
-      navigate('/subjects');
+      const restored = useTestStore.getState().restoreActiveTest();
+      if (!restored) {
+        navigate('/subjects');
+      }
     }
   }, [questions, status, navigate]);
 

@@ -20,9 +20,9 @@ Recallify was designed, implemented, and verified autonomously across all 12 dev
 | **Test** | Randomized questions work | **VERIFIED.** Fisher-Yates sampling guarantees zero duplicate questions. Minimum (5) and maximum bounds validated. |
 | **Submission** | Results hidden until submission | **VERIFIED.** Zero answers or hints leaked into DOM during exam. Unanswered questions trigger warning confirmation modal. |
 | **Results** | Accurate scoring and answer review | **VERIFIED.** Score percentage calculated, 70% passing threshold enforced, detailed question review with user vs official choices. |
-| **Persistence** | localStorage works | **VERIFIED.** `localStorageService` handles stats, test history, active session recovery, bookmarks, and safe reset. |
+| **Persistence** | localStorage works | **VERIFIED.** `localStorageService` persists learning sessions (rounds, queues, evaluated status), flashcard position, in-progress test resilience against reloads, mastery stats, test history, bookmarks, and isolated per-subject reset. |
 | **Responsive** | Desktop and mobile usable | **VERIFIED.** Fully responsive Tailwind CSS grid, responsive navigators, tested across viewports. |
-| **QA** | Core functionality tested | **VERIFIED.** 12/12 automated unit tests passed; end-to-end browser tests verified with Playwright MCP (0 console errors). |
+| **QA** | Core functionality tested | **VERIFIED.** 16/16 automated unit tests passed; end-to-end browser tests verified with Playwright MCP (0 console errors). |
 | **Build** | Production build succeeds | **VERIFIED.** `npm run build` succeeds in 5.11s with optimized Rollup code splitting. |
 | **Documentation** | README and test reports completed | **VERIFIED.** README.md, SOURCE_ANALYSIS.md, TEST_REPORT.md, and KNOWN_LIMITATIONS.md completed. |
 

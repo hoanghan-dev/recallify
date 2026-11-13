@@ -14,6 +14,7 @@ import {
 import { subjects } from '../../data/subjects.js';
 import { getQuestionsBySubjectId } from '../../data/questions/index.js';
 import { useAppStore } from '../../store/useAppStore.js';
+import { localStorageService } from '../../services/storage/localStorageService.js';
 import { FlipCard } from '../../components/questions/FlipCard.jsx';
 import { Button } from '../../components/common/Button.jsx';
 import { ProgressBar } from '../../components/common/ProgressBar.jsx';
@@ -32,15 +33,42 @@ export const FlashcardsPage = () => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isShuffled, setIsShuffled] = useState(false);
   const [isDeckFinished, setIsDeckFinished] = useState(false);
+  const [isResumed, setIsResumed] = useState(false);
 
-  // Sync deck when subject changes
+  // Sync deck and restore saved progress when subject changes
   useEffect(() => {
+    const saved = localStorageService.getFlashcardsProgress(subject.id);
     setDeck(initialQuestions);
-    setCurrentIndex(0);
     setIsFlipped(false);
-    setIsShuffled(false);
     setIsDeckFinished(false);
-  }, [initialQuestions]);
+
+    if (
+      saved &&
+      typeof saved.currentIndex === 'number' &&
+      saved.currentIndex > 0 &&
+      saved.currentIndex < initialQuestions.length
+    ) {
+      setCurrentIndex(saved.currentIndex);
+      setIsShuffled(!!saved.isShuffled);
+      setIsResumed(true);
+    } else {
+      setCurrentIndex(0);
+      setIsShuffled(false);
+      setIsResumed(false);
+    }
+  }, [subject.id, initialQuestions]);
+
+  const updateProgress = useCallback(
+    (newIndex, shuffled = isShuffled) => {
+      localStorageService.setFlashcardsProgress(subject.id, {
+        currentIndex: newIndex,
+        totalQuestions: deck.length,
+        isShuffled: shuffled
+      });
+      useAppStore.getState().refreshStats();
+    },
+    [subject.id, deck.length, isShuffled]
+  );
 
   const currentQuestion = deck[currentIndex];
   const currentBookmarked = currentQuestion ? isBookmarked(currentQuestion.id) : false;
@@ -51,19 +79,24 @@ export const FlashcardsPage = () => {
 
   const handleNext = useCallback(() => {
     if (currentIndex < deck.length - 1) {
+      const nextIdx = currentIndex + 1;
       setIsFlipped(false);
-      setCurrentIndex((prev) => prev + 1);
+      setCurrentIndex(nextIdx);
+      updateProgress(nextIdx);
     } else {
       setIsDeckFinished(true);
+      updateProgress(currentIndex);
     }
-  }, [currentIndex, deck.length]);
+  }, [currentIndex, deck.length, updateProgress]);
 
   const handlePrevious = useCallback(() => {
     if (currentIndex > 0) {
+      const prevIdx = currentIndex - 1;
       setIsFlipped(false);
-      setCurrentIndex((prev) => prev - 1);
+      setCurrentIndex(prevIdx);
+      updateProgress(prevIdx);
     }
-  }, [currentIndex]);
+  }, [currentIndex, updateProgress]);
 
   const handleShuffle = useCallback(() => {
     const shuffled = [...deck];
@@ -76,7 +109,8 @@ export const FlashcardsPage = () => {
     setIsFlipped(false);
     setIsShuffled(true);
     setIsDeckFinished(false);
-  }, [deck]);
+    updateProgress(0, true);
+  }, [deck, updateProgress]);
 
   const handleRestart = useCallback(() => {
     setDeck(initialQuestions);
@@ -84,7 +118,10 @@ export const FlashcardsPage = () => {
     setIsFlipped(false);
     setIsShuffled(false);
     setIsDeckFinished(false);
-  }, [initialQuestions]);
+    setIsResumed(false);
+    localStorageService.clearFlashcardsProgress(subject.id);
+    useAppStore.getState().refreshStats();
+  }, [initialQuestions, subject.id]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -166,6 +203,28 @@ export const FlashcardsPage = () => {
           size="sm"
         />
       </div>
+
+      {/* Auto-Restored Flashcards Banner */}
+      {isResumed && !isDeckFinished && (
+        <div className="bg-indigo-50/90 border border-indigo-200/80 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-indigo-950 shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-900">Đã tự động khôi phục vị trí xem thẻ</p>
+              <p className="text-slate-600 text-[11px]">Đang tiếp tục từ Thẻ {currentIndex + 1} của {deck.length} (lần học trước)</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleRestart}
+            className="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-white px-3 py-1.5 rounded-lg border border-indigo-200 hover:border-indigo-300 shadow-2xs transition-all self-start sm:self-auto cursor-pointer"
+          >
+            Bắt đầu lại từ Thẻ 1
+          </button>
+        </div>
+      )}
 
       {/* Main Flashcard Container */}
       {!isDeckFinished ? (

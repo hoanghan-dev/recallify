@@ -37,7 +37,7 @@ export const Navbar = () => {
                 Recallify
               </span>
               <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 -mt-1">
-                Exam Prep
+                Remember. Challenge. Improve.
               </span>
             </div>
           </Link>

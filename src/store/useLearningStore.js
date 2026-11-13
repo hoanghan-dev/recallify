@@ -16,6 +16,55 @@ export const useLearningStore = create((set, get) => ({
   isEvaluated: false,
   isRoundComplete: false,
   isAllMastered: false,
+  isResumed: false,
+
+  _persist: () => {
+    const s = get();
+    if (!s.subjectId || !s.queue || s.queue.length === 0) return;
+    localStorageService.setActiveLearning(s.subjectId, {
+      subjectId: s.subjectId,
+      round: s.round,
+      queue: s.queue,
+      currentIndex: s.currentIndex,
+      roundCorrect: s.roundCorrect,
+      roundIncorrect: s.roundIncorrect,
+      mastered: s.mastered,
+      userSelection: s.userSelection,
+      feedback: s.feedback,
+      isEvaluated: s.isEvaluated,
+      isRoundComplete: s.isRoundComplete,
+      isAllMastered: s.isAllMastered
+    });
+  },
+
+  initOrResumeSession: (subjectId, allQuestions) => {
+    if (!subjectId || !allQuestions || allQuestions.length === 0) return { resumed: false };
+
+    // Check if active uncompleted session exists in localStorage
+    const saved = localStorageService.getActiveLearning(subjectId);
+    if (saved && saved.queue && saved.queue.length > 0 && !saved.isAllMastered) {
+      set({
+        subjectId: saved.subjectId || subjectId,
+        round: saved.round || 1,
+        queue: saved.queue,
+        currentIndex: saved.currentIndex || 0,
+        roundCorrect: saved.roundCorrect || [],
+        roundIncorrect: saved.roundIncorrect || [],
+        mastered: saved.mastered || [],
+        userSelection: saved.userSelection || null,
+        feedback: saved.feedback || null,
+        isEvaluated: !!saved.isEvaluated,
+        isRoundComplete: !!saved.isRoundComplete,
+        isAllMastered: !!saved.isAllMastered,
+        isResumed: true
+      });
+      return { resumed: true };
+    }
+
+    // Otherwise start fresh
+    get().startSession(subjectId, allQuestions);
+    return { resumed: false };
+  },
 
   startSession: (subjectId, questions) => {
     if (!questions || questions.length === 0) return;
@@ -23,7 +72,7 @@ export const useLearningStore = create((set, get) => ({
     // Shuffle questions initially for active recall
     const shuffled = [...questions].sort(() => Math.random() - 0.5);
 
-    set({
+    const newState = {
       subjectId,
       round: 1,
       queue: shuffled,
@@ -35,8 +84,17 @@ export const useLearningStore = create((set, get) => ({
       feedback: null,
       isEvaluated: false,
       isRoundComplete: false,
-      isAllMastered: false
-    });
+      isAllMastered: false,
+      isResumed: false
+    };
+
+    set(newState);
+    get()._persist();
+  },
+
+  restartSession: (subjectId, questions) => {
+    localStorageService.clearActiveLearning(subjectId);
+    get().startSession(subjectId, questions);
   },
 
   selectOption: (optionId) => {
@@ -95,6 +153,7 @@ export const useLearningStore = create((set, get) => ({
       roundCorrect: nextCorrect,
       roundIncorrect: nextIncorrect
     });
+    get()._persist();
   },
 
   continueToNext: () => {
@@ -108,6 +167,7 @@ export const useLearningStore = create((set, get) => ({
         feedback: null,
         isEvaluated: false
       });
+      get()._persist();
     } else {
       // Completed all questions in current round!
       // Any questions answered correctly in this round graduate to mastered
@@ -122,6 +182,7 @@ export const useLearningStore = create((set, get) => ({
         isRoundComplete: true,
         isAllMastered: roundIncorrect.length === 0
       });
+      get()._persist();
     }
   },
 
@@ -148,9 +209,14 @@ export const useLearningStore = create((set, get) => ({
       isRoundComplete: false,
       isAllMastered: false
     });
+    get()._persist();
   },
 
   finishSession: () => {
+    const { subjectId } = get();
+    if (subjectId) {
+      localStorageService.clearActiveLearning(subjectId);
+    }
     set({
       subjectId: null,
       round: 1,
@@ -163,7 +229,8 @@ export const useLearningStore = create((set, get) => ({
       feedback: null,
       isEvaluated: false,
       isRoundComplete: false,
-      isAllMastered: false
+      isAllMastered: false,
+      isResumed: false
     });
     useAppStore.getState().refreshStats();
   }

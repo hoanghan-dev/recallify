@@ -26,6 +26,11 @@ export const useAppStore = create((set, get) => ({
   resetProgress: () => {
     localStorageService.resetAllProgress();
     get().refreshStats();
+  },
+
+  resetSubjectProgress: (subjectId) => {
+    localStorageService.resetSubjectProgress(subjectId);
+    get().refreshStats();
   }
 }));
 

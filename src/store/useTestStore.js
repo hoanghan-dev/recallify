@@ -34,6 +34,7 @@ export const useTestStore = create((set, get) => ({
       userAnswers: {},
       flaggedIds: [],
       startTime,
+      currentIndex: 0,
       status: 'in_progress'
     };
     localStorageService.setActiveTest(initialTestData);
@@ -52,6 +53,32 @@ export const useTestStore = create((set, get) => ({
       status: 'in_progress',
       result: null
     });
+  },
+
+  restoreActiveTest: () => {
+    const activeTest = localStorageService.getActiveTest();
+    if (activeTest && activeTest.questions && activeTest.questions.length > 0 && activeTest.status === 'in_progress') {
+      const elapsed = activeTest.startTime
+        ? Math.floor((Date.now() - activeTest.startTime) / 1000)
+        : activeTest.elapsedSeconds || 0;
+
+      set({
+        testId: activeTest.testId,
+        subjectId: activeTest.subjectId,
+        subjectName: activeTest.subjectName,
+        title: activeTest.title,
+        questions: activeTest.questions,
+        currentIndex: activeTest.currentIndex || 0,
+        userAnswers: activeTest.userAnswers || {},
+        flaggedIds: activeTest.flaggedIds || [],
+        startTime: activeTest.startTime,
+        elapsedSeconds: elapsed,
+        status: 'in_progress',
+        result: null
+      });
+      return true;
+    }
+    return false;
   },
 
   setAnswer: (questionId, optionId) => {
@@ -101,17 +128,45 @@ export const useTestStore = create((set, get) => ({
       nextFlags = [...flaggedIds, questionId];
     }
     set({ flaggedIds: nextFlags });
+
+    const activeTest = localStorageService.getActiveTest();
+    if (activeTest) {
+      localStorageService.setActiveTest({
+        ...activeTest,
+        flaggedIds: nextFlags
+      });
+    }
   },
 
   setCurrentIndex: (index) => {
     const { questions } = get();
     if (index >= 0 && index < questions.length) {
       set({ currentIndex: index });
+      const activeTest = localStorageService.getActiveTest();
+      if (activeTest) {
+        localStorageService.setActiveTest({
+          ...activeTest,
+          currentIndex: index
+        });
+      }
     }
   },
 
   incrementElapsed: () => {
-    set((state) => ({ elapsedSeconds: state.elapsedSeconds + 1 }));
+    set((state) => {
+      const nextElapsed = state.elapsedSeconds + 1;
+      // Periodically sync elapsed seconds
+      if (nextElapsed % 5 === 0) {
+        const activeTest = localStorageService.getActiveTest();
+        if (activeTest) {
+          localStorageService.setActiveTest({
+            ...activeTest,
+            elapsedSeconds: nextElapsed
+          });
+        }
+      }
+      return { elapsedSeconds: nextElapsed };
+    });
   },
 
   submitTest: () => {
@@ -151,6 +206,7 @@ export const useTestStore = create((set, get) => ({
   },
 
   resetTest: () => {
+    localStorageService.clearActiveTest();
     set({
       testId: null,
       subjectId: null,

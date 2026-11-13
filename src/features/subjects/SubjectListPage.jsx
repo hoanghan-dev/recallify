@@ -60,9 +60,19 @@ export const SubjectListPage = () => {
                     {subject.code.slice(0, 3)}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="primary" size="xs">{subject.code}</Badge>
                       <Badge variant="default" size="xs">{subject.category}</Badge>
+                      {subject.activeLearning && !subject.activeLearning.isAllMastered && (
+                        <Badge variant="warning" size="xs">
+                          Đang học Vòng {subject.activeLearning.round}
+                        </Badge>
+                      )}
+                      {subject.flashcardProgress?.currentIndex > 0 && (
+                        <Badge variant="indigo" size="xs">
+                          Thẻ {subject.flashcardProgress.currentIndex + 1}/{subject.flashcardProgress.totalQuestions}
+                        </Badge>
+                      )}
                     </div>
                     <Link
                       to={`/subjects/${subject.id}`}
@@ -104,7 +114,9 @@ export const SubjectListPage = () => {
                   icon={RotateCw}
                   onClick={() => navigate(`/subjects/${subject.id}/flashcards`)}
                 >
-                  Flashcards
+                  {subject.flashcardProgress?.currentIndex > 0
+                    ? `Thẻ ${subject.flashcardProgress.currentIndex + 1}`
+                    : 'Flashcards'}
                 </Button>
                 <Button
                   variant="primary"
@@ -112,7 +124,9 @@ export const SubjectListPage = () => {
                   icon={Brain}
                   onClick={() => navigate(`/subjects/${subject.id}/learn`)}
                 >
-                  Learn
+                  {subject.activeLearning && !subject.activeLearning.isAllMastered
+                    ? `Học tiếp V${subject.activeLearning.round}`
+                    : 'Learn'}
                 </Button>
                 <Button
                   variant="secondary"

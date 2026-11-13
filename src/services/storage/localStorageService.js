@@ -5,7 +5,8 @@ const STORAGE_KEYS = {
   TESTS: 'recallify_tests_v1',
   BOOKMARKS: 'recallify_bookmarks_v1',
   ACTIVE_LEARNING: 'recallify_learning_v1',
-  ACTIVE_TEST: 'recallify_active_test_v1'
+  ACTIVE_TEST: 'recallify_active_test_v1',
+  FLASHCARDS: 'recallify_flashcards_v1'
 };
 
 const DEFAULT_STATS = {
@@ -169,6 +170,7 @@ export const localStorageService = {
     this.remove(STORAGE_KEYS.ACTIVE_TEST);
   },
 
+  // Active Learning session cache
   getActiveLearning(subjectId) {
     const all = this.get(STORAGE_KEYS.ACTIVE_LEARNING, {});
     return all[subjectId] || null;
@@ -176,14 +178,76 @@ export const localStorageService = {
 
   setActiveLearning(subjectId, state) {
     const all = this.get(STORAGE_KEYS.ACTIVE_LEARNING, {});
-    all[subjectId] = state;
+    all[subjectId] = {
+      ...state,
+      lastUpdated: Date.now()
+    };
     this.set(STORAGE_KEYS.ACTIVE_LEARNING, all);
+    return all[subjectId];
   },
 
   clearActiveLearning(subjectId) {
     const all = this.get(STORAGE_KEYS.ACTIVE_LEARNING, {});
     delete all[subjectId];
     this.set(STORAGE_KEYS.ACTIVE_LEARNING, all);
+  },
+
+  getAllActiveLearning() {
+    return this.get(STORAGE_KEYS.ACTIVE_LEARNING, {});
+  },
+
+  // Flashcards Progress
+  getFlashcardsProgress(subjectId) {
+    const all = this.get(STORAGE_KEYS.FLASHCARDS, {});
+    return all[subjectId] || null;
+  },
+
+  setFlashcardsProgress(subjectId, progress) {
+    const all = this.get(STORAGE_KEYS.FLASHCARDS, {});
+    all[subjectId] = {
+      ...(all[subjectId] || {}),
+      ...progress,
+      lastUpdated: Date.now()
+    };
+    this.set(STORAGE_KEYS.FLASHCARDS, all);
+    return all[subjectId];
+  },
+
+  clearFlashcardsProgress(subjectId) {
+    const all = this.get(STORAGE_KEYS.FLASHCARDS, {});
+    delete all[subjectId];
+    this.set(STORAGE_KEYS.FLASHCARDS, all);
+  },
+
+  getAllFlashcardsProgress() {
+    return this.get(STORAGE_KEYS.FLASHCARDS, {});
+  },
+
+  // Reset progress for a specific subject
+  resetSubjectProgress(subjectId) {
+    this.clearActiveLearning(subjectId);
+    this.clearFlashcardsProgress(subjectId);
+
+    const stats = this.getStats();
+    if (stats.subjectStats && stats.subjectStats[subjectId]) {
+      const subMastered = stats.subjectStats[subjectId].mastered || [];
+      stats.masteredQuestions = (stats.masteredQuestions || []).filter((id) => !subMastered.includes(id));
+      stats.totalAnswered = Math.max(0, (stats.totalAnswered || 0) - (stats.subjectStats[subjectId].answered || 0));
+      stats.totalCorrect = Math.max(0, (stats.totalCorrect || 0) - (stats.subjectStats[subjectId].correct || 0));
+      stats.subjectStats[subjectId] = { answered: 0, correct: 0, mastered: [] };
+    }
+    if (stats.attemptedQuestions) {
+      Object.keys(stats.attemptedQuestions).forEach((qid) => {
+        if (qid.toLowerCase().includes(subjectId.toLowerCase())) {
+          delete stats.attemptedQuestions[qid];
+        }
+      });
+    }
+    this.set(STORAGE_KEYS.STATS, stats);
+
+    const tests = this.getTestHistory().filter((t) => t.subjectId !== subjectId);
+    this.set(STORAGE_KEYS.TESTS, tests);
+    return true;
   },
 
   // Reset progress completely (preserves immutable mock data)

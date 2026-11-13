@@ -170,6 +170,113 @@ it('Calculates score and enforces 70% passing threshold', () => {
   assert.strictEqual(gradeFail.passed, false);
 });
 
+console.log('\n--- 5. Testing LocalStorage Persistence & Progress Recovery ---');
+
+// Polyfill localStorage in Node.js environment
+if (typeof globalThis.localStorage === 'undefined') {
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: (key) => (store.has(key) ? store.get(key) : null),
+    setItem: (key, val) => store.set(key, String(val)),
+    removeItem: (key) => store.delete(key),
+    clear: () => store.clear()
+  };
+}
+
+const { localStorageService } = await import('../src/services/storage/localStorageService.js');
+
+it('Saves, retrieves, and clears Flashcard reading progress per subject', () => {
+  localStorageService.setFlashcardsProgress('swd301', {
+    currentIndex: 24,
+    totalQuestions: 198,
+    isShuffled: true
+  });
+
+  const saved = localStorageService.getFlashcardsProgress('swd301');
+  assert.ok(saved, 'Saved flashcard progress should exist');
+  assert.strictEqual(saved.currentIndex, 24);
+  assert.strictEqual(saved.totalQuestions, 198);
+  assert.strictEqual(saved.isShuffled, true);
+  assert.ok(saved.lastUpdated > 0);
+
+  localStorageService.clearFlashcardsProgress('swd301');
+  const cleared = localStorageService.getFlashcardsProgress('swd301');
+  assert.strictEqual(cleared, null);
+});
+
+it('Saves and restores Active Learning session state across questions and rounds', () => {
+  const mockSession = {
+    subjectId: 'sba301',
+    round: 2,
+    currentIndex: 5,
+    queue: [{ id: 'sba-01' }, { id: 'sba-02' }],
+    roundCorrect: ['sba-03'],
+    roundIncorrect: ['sba-01'],
+    mastered: ['sba-04']
+  };
+
+  localStorageService.setActiveLearning('sba301', mockSession);
+
+  const restored = localStorageService.getActiveLearning('sba301');
+  assert.ok(restored, 'Active learning session should be retrieved');
+  assert.strictEqual(restored.round, 2);
+  assert.strictEqual(restored.currentIndex, 5);
+  assert.deepStrictEqual(restored.roundCorrect, ['sba-03']);
+
+  localStorageService.clearActiveLearning('sba301');
+  assert.strictEqual(localStorageService.getActiveLearning('sba301'), null);
+});
+
+it('Preserves active test state for reload resilience and clears upon submission', () => {
+  const mockTest = {
+    testId: 'test-12345',
+    subjectId: 'swd301',
+    title: 'SWD301 Midterm',
+    questions: [{ id: 'q1' }, { id: 'q2' }],
+    userAnswers: { q1: 'A' },
+    status: 'in_progress',
+    startTime: Date.now()
+  };
+
+  localStorageService.setActiveTest(mockTest);
+  const active = localStorageService.getActiveTest();
+  assert.ok(active);
+  assert.strictEqual(active.testId, 'test-12345');
+  assert.strictEqual(active.userAnswers.q1, 'A');
+
+  localStorageService.clearActiveTest();
+  assert.strictEqual(localStorageService.getActiveTest(), null);
+});
+
+it('Safely resets progress for one subject without corrupting other subjects', () => {
+  // Record answers for both subjects
+  localStorageService.recordAnswer('swd301', 'swd-01', true);
+  localStorageService.recordAnswer('swd301', 'swd-02', false);
+  localStorageService.recordAnswer('sba301', 'sba-01', true);
+  localStorageService.markQuestionsMastered('swd301', ['swd-01']);
+  localStorageService.markQuestionsMastered('sba301', ['sba-01']);
+  localStorageService.setFlashcardsProgress('swd301', { currentIndex: 10 });
+  localStorageService.setFlashcardsProgress('sba301', { currentIndex: 20 });
+
+  // Reset swd301 only
+  localStorageService.resetSubjectProgress('swd301');
+
+  const stats = localStorageService.getStats();
+  // swd301 should be reset to zero
+  assert.strictEqual(stats.subjectStats['swd301'].answered, 0);
+  assert.strictEqual(stats.subjectStats['swd301'].correct, 0);
+  assert.deepStrictEqual(stats.subjectStats['swd301'].mastered, []);
+  assert.strictEqual(localStorageService.getFlashcardsProgress('swd301'), null);
+
+  // sba301 must still exist and be intact!
+  assert.ok(stats.subjectStats['sba301'], 'sba301 stats must remain intact');
+  assert.strictEqual(stats.subjectStats['sba301'].answered, 1);
+  assert.strictEqual(stats.subjectStats['sba301'].correct, 1);
+  assert.deepStrictEqual(stats.subjectStats['sba301'].mastered, ['sba-01']);
+  const sbaCards = localStorageService.getFlashcardsProgress('sba301');
+  assert.strictEqual(sbaCards.currentIndex, 20);
+});
+
 console.log(`\n========================================`);
 console.log(`Automated Tests Passed: ${passedTests} / ${totalTests}`);
 console.log(`========================================\n`);

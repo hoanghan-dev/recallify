@@ -20,6 +20,7 @@ import { getQuestionsBySubjectId } from '../../data/questions/index.js';
 import { useAppStore } from '../../store/useAppStore.js';
 import { Button } from '../../components/common/Button.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
+import { Modal } from '../../components/common/Modal.jsx';
 import { ProgressBar } from '../../components/common/ProgressBar.jsx';
 import { TestConfigModal } from '../tests/TestConfigModal.jsx';
 import { clsx } from 'clsx';
@@ -27,9 +28,10 @@ import { clsx } from 'clsx';
 export const SubjectDetailPage = () => {
   const { subjectId } = useParams();
   const navigate = useNavigate();
-  const { toggleBookmark, isBookmarked, metrics } = useAppStore();
+  const { toggleBookmark, isBookmarked, metrics, resetSubjectProgress } = useAppStore();
 
   const [testModalOpen, setTestModalOpen] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [revealAnswers, setRevealAnswers] = useState(false);
@@ -65,6 +67,22 @@ export const SubjectDetailPage = () => {
     totalQuestions: allQuestions.length
   };
 
+  const hasFlashcardProgress =
+    subjectMetric.flashcardProgress &&
+    typeof subjectMetric.flashcardProgress.currentIndex === 'number' &&
+    subjectMetric.flashcardProgress.currentIndex > 0;
+
+  const hasActiveLearning =
+    subjectMetric.activeLearning &&
+    subjectMetric.activeLearning.queue &&
+    subjectMetric.activeLearning.queue.length > 0 &&
+    !subjectMetric.activeLearning.isAllMastered;
+
+  const handleResetSubject = () => {
+    resetSubjectProgress(subject.id);
+    setShowResetConfirm(false);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Breadcrumb & Navigation Back */}
@@ -95,15 +113,27 @@ export const SubjectDetailPage = () => {
           </div>
 
           {/* Quick Mastery Radial / Metric box */}
-          <div className="lg:shrink-0 bg-slate-50 border border-slate-100 rounded-2xl p-5 w-full lg:w-64 space-y-2">
+          <div className="lg:shrink-0 bg-slate-50 border border-slate-100 rounded-2xl p-5 w-full lg:w-64 space-y-2.5">
             <div className="flex justify-between items-center text-xs">
               <span className="font-semibold text-slate-700">Course Mastery</span>
               <span className="font-bold text-indigo-700">{subjectMetric.masteryPercentage}%</span>
             </div>
             <ProgressBar value={subjectMetric.mastered} max={subjectMetric.totalQuestions} variant="success" size="md" />
-            <div className="text-[11px] text-slate-500 pt-1 flex justify-between">
+            <div className="text-[11px] text-slate-500 pt-0.5 flex justify-between">
               <span>{subjectMetric.mastered} Mastered</span>
               <span>{subjectMetric.totalQuestions - subjectMetric.mastered} Remaining</span>
+            </div>
+            <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500">{subjectMetric.answered || 0} đã trả lời</span>
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(true)}
+                className="text-[11px] font-semibold text-slate-400 hover:text-rose-600 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                title="Đặt lại tiến trình môn này"
+              >
+                <RotateCw className="w-3 h-3" />
+                <span>Đặt lại</span>
+              </button>
             </div>
           </div>
         </div>
@@ -113,10 +143,17 @@ export const SubjectDetailPage = () => {
           {/* Mode 1: Flashcards */}
           <div
             onClick={() => navigate(`/subjects/${subject.id}/flashcards`)}
-            className="p-5 rounded-2xl border border-slate-200/90 bg-white hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group space-y-3"
+            className="p-5 rounded-2xl border border-slate-200/90 bg-white hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group space-y-3 relative overflow-hidden"
           >
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <RotateCw className="w-5 h-5" />
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <RotateCw className="w-5 h-5" />
+              </div>
+              {hasFlashcardProgress && (
+                <Badge variant="warning" size="xs">
+                  Đang ở thẻ {subjectMetric.flashcardProgress.currentIndex + 1}/{subjectMetric.flashcardProgress.totalQuestions}
+                </Badge>
+              )}
             </div>
             <div>
               <h3 className="font-bold text-base text-slate-900 group-hover:text-indigo-600 transition-colors">
@@ -127,31 +164,37 @@ export const SubjectDetailPage = () => {
               </p>
             </div>
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600">
-              Start Cards →
+              {hasFlashcardProgress ? 'Tiếp tục lật thẻ →' : 'Start Cards →'}
             </span>
           </div>
 
           {/* Mode 2: Adaptive Learning */}
           <div
             onClick={() => navigate(`/subjects/${subject.id}/learn`)}
-            className="p-5 rounded-2xl border-2 border-indigo-500/80 bg-indigo-50/40 hover:bg-indigo-50/70 hover:shadow-md transition-all cursor-pointer group space-y-3"
+            className="p-5 rounded-2xl border-2 border-indigo-500/80 bg-indigo-50/40 hover:bg-indigo-50/70 hover:shadow-md transition-all cursor-pointer group space-y-3 relative overflow-hidden"
           >
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Brain className="w-5 h-5" />
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Brain className="w-5 h-5" />
+              </div>
+              {hasActiveLearning ? (
+                <Badge variant="warning" size="xs">
+                  Đang học Vòng {subjectMetric.activeLearning.round} ({subjectMetric.activeLearning.currentIndex + 1}/{subjectMetric.activeLearning.queue.length})
+                </Badge>
+              ) : (
+                <span className="text-[10px] font-bold uppercase bg-indigo-600 text-white px-1.5 py-0.5 rounded">Recommended</span>
+              )}
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <h3 className="font-bold text-base text-slate-900 group-hover:text-indigo-600 transition-colors">
-                  Adaptive Learning
-                </h3>
-                <span className="text-[10px] font-bold uppercase bg-indigo-600 text-white px-1.5 py-0.2 rounded">Recommended</span>
-              </div>
+              <h3 className="font-bold text-base text-slate-900 group-hover:text-indigo-600 transition-colors">
+                Adaptive Learning
+              </h3>
               <p className="text-xs text-slate-600 mt-0.5">
                 Immediate feedback with automatic repetition of missed questions until mastery.
               </p>
             </div>
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700">
-              Launch Session →
+              {hasActiveLearning ? 'Tiếp tục phiên học →' : 'Launch Session →'}
             </span>
           </div>
 
@@ -342,6 +385,38 @@ export const SubjectDetailPage = () => {
           onClose={() => setTestModalOpen(false)}
         />
       )}
+
+      {/* Reset Subject Progress Confirmation Modal */}
+      <Modal
+        isOpen={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        title="Đặt lại tiến trình môn học"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Bạn có chắc chắn muốn đặt lại toàn bộ tiến trình học tập, vị trí xem Flashcard và lịch sử làm bài thi của môn <strong className="text-slate-900">{subject.name}</strong> không?
+          </p>
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+            Hành động này sẽ xóa các câu đã thuộc (mastered) và phiên học đang làm dở của riêng môn này trong bộ nhớ trình duyệt (localStorage).
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowResetConfirm(false)}
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleResetSubject}
+            >
+              Xác nhận đặt lại
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

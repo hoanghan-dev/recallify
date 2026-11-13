@@ -44,7 +44,9 @@ export const LearningPage = () => {
     isEvaluated,
     isRoundComplete,
     isAllMastered,
-    startSession,
+    isResumed,
+    initOrResumeSession,
+    restartSession,
     selectOption,
     evaluateCurrentAnswer,
     continueToNext,
@@ -52,10 +54,10 @@ export const LearningPage = () => {
     finishSession
   } = useLearningStore();
 
-  // Initialize or re-init session when subject changes
+  // Initialize or resume session when subject changes
   useEffect(() => {
-    startSession(subject.id, allQuestions);
-  }, [subject.id, allQuestions, startSession]);
+    initOrResumeSession(subject.id, allQuestions);
+  }, [subject.id, allQuestions, initOrResumeSession]);
 
   // Trigger celebration confetti when 100% mastery achieved
   useEffect(() => {
@@ -126,6 +128,28 @@ export const LearningPage = () => {
           <Badge variant="default" size="sm">{subject.code}</Badge>
         </div>
       </div>
+
+      {/* Auto-Restored Session Banner */}
+      {isResumed && !isRoundComplete && (
+        <div className="bg-indigo-50/90 border border-indigo-200/80 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-indigo-950 shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-bold text-slate-900">Đã tự động khôi phục tiến trình học tập</p>
+              <p className="text-slate-600 text-[11px]">Đang tiếp tục tại Vòng {round}, Câu {currentIndex + 1} của {queue.length}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => restartSession(subject.id, allQuestions)}
+            className="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-white px-3 py-1.5 rounded-lg border border-indigo-200 hover:border-indigo-300 shadow-2xs transition-all self-start sm:self-auto cursor-pointer"
+          >
+            Học lại từ đầu
+          </button>
+        </div>
+      )}
 
       {/* Real-Time Session Status Bar */}
       {!isRoundComplete && (

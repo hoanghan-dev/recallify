@@ -7,6 +7,8 @@ export const statsEngine = {
     const stats = localStorageService.getStats();
     const testHistory = localStorageService.getTestHistory();
     const bookmarks = localStorageService.getBookmarks();
+    const flashcardsProgress = localStorageService.getAllFlashcardsProgress();
+    const activeLearningSessions = localStorageService.getAllActiveLearning();
 
     const totalSubjects = subjects.length;
     const totalQuestions = subjects.reduce((sum, s) => sum + s.totalQuestions, 0);
@@ -38,7 +40,9 @@ export const statsEngine = {
         correct: subStat.correct,
         mastered,
         masteryPercentage,
-        accuracy
+        accuracy,
+        flashcardProgress: flashcardsProgress[subj.id] || null,
+        activeLearning: activeLearningSessions[subj.id] || null
       };
     });
 
@@ -52,7 +56,9 @@ export const statsEngine = {
       averageTestScore,
       bookmarkedCount: bookmarks.length,
       subjectProgress,
-      recentTests: testHistory.slice(0, 5)
+      recentTests: testHistory.slice(0, 5),
+      activeLearningSessions,
+      flashcardsProgress
     };
   }
 };
