@@ -21,6 +21,7 @@ import { subjects } from '../../data/subjects.js';
 import { ProgressBar } from '../../components/common/ProgressBar.jsx';
 import { Badge } from '../../components/common/Badge.jsx';
 import { Button } from '../../components/common/Button.jsx';
+import { LogoMark } from '../../components/common/Logo.jsx';
 import { TestConfigModal } from '../tests/TestConfigModal.jsx';
 
 export const DashboardPage = () => {
@@ -31,7 +32,7 @@ export const DashboardPage = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* ================= HERO WELCOME BANNER ================= */}
-      <section className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-950 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-lg border border-indigo-700/40">
+      <section className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-950 rounded-3xl p-6 sm:p-8 text-white relative overflow-hidden shadow-lg border border-indigo-700/40 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="relative z-10 max-w-2xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/30 border border-indigo-400/30 text-indigo-200 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
@@ -63,6 +64,13 @@ export const DashboardPage = () => {
             >
               Start Learning: SBA301
             </Button>
+          </div>
+        </div>
+
+        {/* Exclusive Brand Emblem Glassmorphic Badge */}
+        <div className="hidden lg:flex items-center justify-center relative z-10 shrink-0 pr-4">
+          <div className="w-28 h-28 rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 p-3 shadow-2xl flex items-center justify-center transform rotate-3 hover:rotate-0 transition-transform duration-300">
+            <LogoMark size="xl" className="w-20 h-20" />
           </div>
         </div>
 
@@ -198,15 +206,21 @@ export const DashboardPage = () => {
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-semibold text-slate-700 flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      Mastery Progress
+                      Learn Mode Mastery
                     </span>
                     <span className="font-bold text-indigo-700">{subject.masteryPercentage}%</span>
                   </div>
                   <ProgressBar value={subject.mastered} max={subject.totalQuestions} variant="success" size="md" />
                   <div className="flex justify-between items-center text-[11px] text-slate-500 pt-1">
-                    <span>{subject.mastered} terms mastered</span>
+                    <span>{subject.mastered} terms mastered ({subject.masteryPercentage}%)</span>
                     <span>{subject.totalQuestions - subject.mastered} terms in learning queue</span>
                   </div>
+                  {subject.activeLearning && !subject.activeLearning.isAllMastered && (
+                    <div className="text-[11px] text-indigo-700 font-medium pt-1.5 border-t border-slate-200/60 flex items-center justify-between">
+                      <span>Đang học Vòng {subject.activeLearning.round} (Câu {(subject.activeLearning.currentIndex || 0) + 1}/{subject.activeLearning.queue.length})</span>
+                      <span className="text-emerald-700 font-bold">{subject.activeLearning.roundCorrect?.length || 0} câu đúng</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Study Action Buttons */}

@@ -93,15 +93,21 @@ export const SubjectListPage = () => {
                 <div className="flex justify-between items-center text-xs">
                   <span className="font-semibold text-slate-700 flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    Overall Mastery
+                    Learn Mode Mastery
                   </span>
                   <span className="font-bold text-indigo-700">{subject.masteryPercentage}%</span>
                 </div>
                 <ProgressBar value={subject.mastered} max={subject.totalQuestions} variant="success" size="md" />
                 <div className="flex justify-between items-center text-[11px] text-slate-500 pt-1">
-                  <span>{subject.mastered} / {subject.totalQuestions} Questions Mastered</span>
+                  <span>{subject.mastered} / {subject.totalQuestions} Questions Mastered ({subject.masteryPercentage}%)</span>
                   <span>{subject.answered} Attempted</span>
                 </div>
+                {subject.activeLearning && !subject.activeLearning.isAllMastered && (
+                  <div className="text-[11px] text-indigo-700 font-medium pt-1.5 border-t border-slate-200/60 flex items-center justify-between">
+                    <span>Đang học Vòng {subject.activeLearning.round} (Câu {(subject.activeLearning.currentIndex || 0) + 1}/{subject.activeLearning.queue.length})</span>
+                    <span className="text-emerald-700 font-bold">{subject.activeLearning.roundCorrect?.length || 0} câu đúng</span>
+                  </div>
+                )}
               </div>
             </div>
 

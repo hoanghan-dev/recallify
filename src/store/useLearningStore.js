@@ -69,17 +69,18 @@ export const useLearningStore = create((set, get) => ({
   startSession: (subjectId, questions) => {
     if (!questions || questions.length === 0) return;
 
-    // Shuffle questions initially for active recall
-    const shuffled = [...questions].sort(() => Math.random() - 0.5);
+    // Sequential ascending order by default, exactly like Flashcard mode
+    const sequential = [...questions];
+    const prevMastered = localStorageService.getStats().subjectStats[subjectId]?.mastered || [];
 
     const newState = {
       subjectId,
       round: 1,
-      queue: shuffled,
+      queue: sequential,
       currentIndex: 0,
       roundCorrect: [],
       roundIncorrect: [],
-      mastered: [],
+      mastered: prevMastered,
       userSelection: null,
       feedback: null,
       isEvaluated: false,
@@ -142,16 +143,24 @@ export const useLearningStore = create((set, get) => ({
 
     if (evalResult.isCorrect) {
       if (!nextCorrect.includes(currentQ.id)) nextCorrect.push(currentQ.id);
+      // Immediately graduate to mastered in real time!
+      localStorageService.markQuestionsMastered(subjectId, [currentQ.id]);
+      useAppStore.getState().refreshStats();
     } else {
       if (!nextIncorrect.includes(currentQ.id)) nextIncorrect.push(currentQ.id);
     }
+
+    const nextMastered = evalResult.isCorrect
+      ? Array.from(new Set([...get().mastered, currentQ.id]))
+      : get().mastered;
 
     set({
       userSelection: selectionToUse,
       feedback: evalResult,
       isEvaluated: true,
       roundCorrect: nextCorrect,
-      roundIncorrect: nextIncorrect
+      roundIncorrect: nextIncorrect,
+      mastered: nextMastered
     });
     get()._persist();
   },

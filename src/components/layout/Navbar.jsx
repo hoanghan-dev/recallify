@@ -4,6 +4,7 @@ import { Sparkles, BookOpen, Layers, BarChart3, Bookmark, RotateCcw, AlertTriang
 import { useAppStore } from '../../store/useAppStore.js';
 import { Modal } from '../common/Modal.jsx';
 import { Button } from '../common/Button.jsx';
+import { Logo } from '../common/Logo.jsx';
 import { clsx } from 'clsx';
 
 export const Navbar = () => {
@@ -28,18 +29,8 @@ export const Navbar = () => {
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Brand Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-              <Sparkles className="w-5 h-5 fill-white/20" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-bold tracking-tight text-slate-900 font-sans">
-                Recallify
-              </span>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 -mt-1">
-                Remember. Challenge. Improve.
-              </span>
-            </div>
+          <Link to="/" className="group focus:outline-hidden">
+            <Logo size="md" showText={true} showTagline={true} />
           </Link>
 
           {/* Navigation Links */}

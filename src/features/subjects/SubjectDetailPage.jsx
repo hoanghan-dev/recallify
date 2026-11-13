@@ -115,7 +115,7 @@ export const SubjectDetailPage = () => {
           {/* Quick Mastery Radial / Metric box */}
           <div className="lg:shrink-0 bg-slate-50 border border-slate-100 rounded-2xl p-5 w-full lg:w-64 space-y-2.5">
             <div className="flex justify-between items-center text-xs">
-              <span className="font-semibold text-slate-700">Course Mastery</span>
+              <span className="font-semibold text-slate-700">Learn Mode Mastery</span>
               <span className="font-bold text-indigo-700">{subjectMetric.masteryPercentage}%</span>
             </div>
             <ProgressBar value={subjectMetric.mastered} max={subjectMetric.totalQuestions} variant="success" size="md" />

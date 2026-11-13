@@ -277,6 +277,33 @@ it('Safely resets progress for one subject without corrupting other subjects', (
   assert.strictEqual(sbaCards.currentIndex, 20);
 });
 
+it('Preserves ascending sequential order of questions in Learn Mode', async () => {
+  const { useLearningStore } = await import('../src/store/useLearningStore.js');
+  const sample = [
+    { id: 'q1', question: 'Q1' },
+    { id: 'q2', question: 'Q2' },
+    { id: 'q3', question: 'Q3' }
+  ];
+  useLearningStore.getState().startSession('test-sub', sample);
+  const queue = useLearningStore.getState().queue;
+  assert.strictEqual(queue.length, 3);
+  assert.strictEqual(queue[0].id, 'q1');
+  assert.strictEqual(queue[1].id, 'q2');
+  assert.strictEqual(queue[2].id, 'q3');
+});
+
+it('Updates Learn Mode mastery in real time upon answering correctly', async () => {
+  const { useLearningStore } = await import('../src/store/useLearningStore.js');
+  const qList = [
+    { id: 'swd-test-01', correctAnswer: 'A', options: [{ id: 'A', text: 'Opt A' }] }
+  ];
+  useLearningStore.getState().startSession('swd301', qList);
+  useLearningStore.getState().selectOption('A');
+
+  const stats = localStorageService.getStats();
+  assert.ok(stats.subjectStats['swd301'].mastered.includes('swd-test-01'));
+});
+
 console.log(`\n========================================`);
 console.log(`Automated Tests Passed: ${passedTests} / ${totalTests}`);
 console.log(`========================================\n`);

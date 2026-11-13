@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" fill="none">
+  <defs>
+    <!-- Background Gradient for Icon -->
+    <linearGradient id="rec-full-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#7C3AED" />
+    </linearGradient>
+
+    <!-- Loop Accent Gradient -->
+    <linearGradient id="rec-full-loop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E0E7FF" />
+    </linearGradient>
+
+    <!-- Kick Gradient -->
+    <linearGradient id="rec-full-kick" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#A5B4FC" />
+    </linearGradient>
+
+    <!-- Spark Gradient -->
+    <linearGradient id="rec-full-spark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="rec-full-shadow" x="-10%" y="-10%" width="130%" height="130%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2.5" stdDeviation="2" flood-color="#1E1B4B" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- ================= LOGO MARK ================= -->
+  <g transform="translate(6, 6)">
+    <!-- Squircle Container -->
+    <rect x="0" y="0" width="52" height="52" rx="14" fill="url(#rec-full-bg)" filter="url(#rec-full-shadow)" />
+    <rect x="0.5" y="0.5" width="51" height="51" rx="13.5" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="1" />
+
+    <!-- Back Flashcard Silhouette -->
+    <rect x="17" y="6" width="22" height="17" rx="4" fill="#FFFFFF" fill-opacity="0.12" transform="rotate(7 28 14)" />
+
+    <!-- Left Pillar of "R" -->
+    <rect x="11" y="11" width="6" height="30" rx="3" fill="#FFFFFF" />
+
+    <!-- Upper Loop of "R" -->
+    <path
+      d="M14 11 H28 C34.5 11 39.5 15.5 39.5 21 C39.5 26.5 34.5 31 28 31 H14 V25 H27.5 C30.5 25 33 23.2 33 21 C33 18.8 30.5 17 27.5 17 H14 V11 Z"
+      fill="url(#rec-full-loop)"
+    />
+
+    <!-- Dynamic Kick of "R" -->
+    <path
+      d="M22 26.5 L33.5 39.5 C34.5 40.6 36.1 40.7 37.2 39.8 C38.3 38.9 38.5 37.3 37.5 36.2 L27.2 24.5 C26.1 23.3 24.2 23.2 22.9 24.2 C22.2 24.8 21.8 25.7 22 26.5 Z"
+      fill="url(#rec-full-kick)"
+    />
+
+    <!-- Epiphany Star -->
+    <g transform="translate(40, 8)">
+      <path
+        d="M0 -5 C0.3 -1.8 1.8 -0.3 5 0 C1.8 0.3 0.3 1.8 0 5 C-0.3 1.8 -1.8 0.3 -5 0 C-1.8 -0.3 -0.3 -1.8 0 -5 Z"
+        fill="url(#rec-full-spark)"
+      />
+      <circle cx="0" cy="0" r="1.2" fill="#FFFFFF" />
+    </g>
+  </g>
+
+  <!-- ================= WORDMARK & SLOGAN ================= -->
+  <g transform="translate(70, 0)">
+    <!-- Brand Name: Recallify -->
+    <text x="0" y="37" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800" fill="#0F172A" letter-spacing="-0.8">
+      Recall<tspan fill="#4F46E5">ify</tspan>
+    </text>
+
+    <!-- Beta Badge Pill -->
+    <g transform="translate(132, 19)">
+      <rect x="0" y="0" width="38" height="18" rx="5" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1" />
+      <text x="19" y="12.5" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="800" fill="#4F46E5" text-anchor="middle" letter-spacing="0.5">BETA</text>
+    </g>
+
+    <!-- Slogan: Active Recall & Mastery Platform -->
+    <text x="1" y="52" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="700" fill="#6366F1" letter-spacing="1.2">
+      REMEMBER • CHALLENGE • IMPROVE
+    </text>
+  </g>
+</svg>

@@ -195,6 +195,12 @@ export const useTestStore = create((set, get) => ({
     // Save to test history
     localStorageService.saveTestResult(fullResult);
     localStorageService.clearActiveTest();
+
+    // Record question attempt statistics without affecting Learn Mode mastery progress
+    (grading.detailedResults || []).forEach((r) => {
+      localStorageService.recordAnswer(subjectId, r.questionId, r.isCorrect);
+    });
+
     useAppStore.getState().refreshStats();
 
     set({
